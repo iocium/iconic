@@ -1,8 +1,3 @@
-```
-npm install
-npm run dev
-```
+# iconic
 
-```
-npm run deploy
-```
+Need a website favicon? Introducing iconic, a simple website favicon server
