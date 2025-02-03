@@ -1,0 +1,16 @@
+name = "iconic-prod"
+main = "src/index.ts"
+compatibility_date = "2025-01-28"
+account_id = "b0e6b19da3df3101d8e5f1f95fa3dcb7"
+
+# Routing
+route = { pattern = "dev.icons.iocium.net", custom_domain = true }
+
+# Observability
+[observability]
+enabled = true
+
+# KV
+[[kv_namespaces]]
+binding = "KV"
+id = "41f373414f9c42ac85bb8b3caa07aab9"
