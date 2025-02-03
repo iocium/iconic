@@ -4,7 +4,7 @@ import { getMimeType } from "hono/utils/mime";
 import isFQDN from 'validator/lib/isFQDN';
 const app = new Hono<{ Bindings: CloudflareBindings }>();
 
-app.get("/api/v1/:hostname/:filename?", async (c) => {
+app.get("/icon/:hostname/:filename?", async (c) => {
 	// Grab the hostname from the URL
 	let hostname = c.req.param("hostname");
 	let filename = c.req.param("filename") || 'favicon.ico';
