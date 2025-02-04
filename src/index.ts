@@ -161,7 +161,10 @@ app.get("/icon/:hostname/:filename?", async (c) => {
 		}
 	});
 
-	if (i.status !== 200) return c.text(`Not Found`, 404);
+	if (i.status !== 200) {
+		// We're going to fallback to a placeholder image
+		i = await fetch(`https://placehold.co/100x100/EEE/31343C/png?font=open-sans&text=${hostname.slice(0,2)}`)
+	}
 
 	// Next, we save it
 	let resp: any = i.clone();
