@@ -2,6 +2,7 @@ import { Hono } from "hono";
 import * as cheerio from "cheerio";
 import { getMimeType } from "hono/utils/mime";
 import isFQDN from 'validator/lib/isFQDN';
+import { getManifest, PlaceHolder } from './utils';
 const app = new Hono<{ Bindings: CloudflareBindings }>();
 
 app.get("/icon/:hostname/:filename?", async (c) => {
@@ -65,40 +66,14 @@ app.get("/icon/:hostname/:filename?", async (c) => {
 
 	// First, we attempt to find a manifest
 	try {
-		let manifest:any = $("link[rel='manifest']").first().attr('href');
-		if (manifest !== null) {
-			// We found a manifest, so we'll grab it
-			let manifestFetch: any = await fetch(manifest, {
-				headers: {
-					"User-Agent": "iconium/crawler 1.0",
-				},
-				cf: {
-					cacheTtlByStatus: {
-						"200-299": 86400,
-						404: 1,
-						"500-599": 0
-					}
-				}
-			});
-			if (manifestFetch.status == 200) manifestFetch = await manifestFetch.json();
-			
-			if (manifestFetch.icons.length > 0) {
-				for (let i of manifestFetch.icons) {
-					icons.push({
-						src: new URL(i.src, manifest).href,
-						sizes: i.sizes,
-						type: i.type,
-					});
-				}
-			}
-		}
+		icons = await getManifest(body)
 	}
 	catch(e: any) {}
 
 	// Otherwise, time to grab the DOM
 	if (icons.length == 0) {
 		try {
-			$(selectors.join()).each(function (i, el) {
+			$(selectors.join()).each(function (i: any, el: any) {
 				let {
 					href = "",
 					sizes = "",
@@ -162,8 +137,19 @@ app.get("/icon/:hostname/:filename?", async (c) => {
 	});
 
 	if (i.status !== 200) {
-		// We're going to fallback to a placeholder image
-		i = await fetch(`https://placehold.co/100x100/EEE/31343C/png?font=open-sans&text=${hostname.slice(0,2)}`)
+		// We're going to fallback to a placeholder image, so generate it
+		let fallback: any = PlaceHolder(100, 100, '#31343C', '#EEE', hostname.slice(0,2).toUpperCase())
+		// Cache it appropriately
+		await c.env.KV.put(cacheKey, fallback, {
+			metadata: { 'Content-Type': 'image/svg+xml'},
+			expirationTtl: 86400
+		});
+		// And return to viewer
+		return c.body(fallback, {
+			headers: {
+				'Content-Type': 'image/svg+xml'
+			}
+		})
 	}
 
 	// Next, we save it
