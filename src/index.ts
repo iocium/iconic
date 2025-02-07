@@ -2,7 +2,7 @@ import { Hono } from "hono";
 import * as cheerio from "cheerio";
 import { getMimeType } from "hono/utils/mime";
 import isFQDN from 'validator/lib/isFQDN';
-import { getManifest, PlaceHolder } from './utils';
+import { getManifestFromBody, getIconsFromBody, PlaceHolder } from './utils';
 const app = new Hono<{ Bindings: CloudflareBindings }>();
 
 app.get("/icon/:hostname/:filename?", async (c) => {
@@ -66,40 +66,16 @@ app.get("/icon/:hostname/:filename?", async (c) => {
 
 	// First, we attempt to find a manifest
 	try {
-		icons = await getManifest(body)
+		icons = await getManifestFromBody(body)
 	}
 	catch(e: any) {}
 
 	// Otherwise, time to grab the DOM
 	if (icons.length == 0) {
 		try {
-			$(selectors.join()).each(function (i: any, el: any) {
-				let {
-					href = "",
-					sizes = "",
-					type = "",
-					content = "",
-					rel = "",
-					src = "",
-				} = el.attribs;
-	
-				// Set the correct src attribute
-				src = content;
-				if (el.name == "link") src = href;
-				
-				if (src && src !== "#") {
-					// If we haven't figured out a type, we'll do some real ugly work
-					let u: any = new URL(new URL(src, reqInfo.url).href).pathname
-					type = getMimeType(u)
-	
-					icons.push({
-						src: new URL(src, reqInfo.url).href,
-						sizes,
-						type,
-					});
-				}
-			});
-		} catch (e) {}
+			icons = await getIconsFromBody(body, reqInfo)
+		}
+		catch(e: any) {}
 	}
 
 	// Did we find any icons? If not, we'll add a default check for /favicon.ico

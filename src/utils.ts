@@ -1,6 +1,7 @@
 import * as cheerio from "cheerio";
+import { getMimeType } from "hono/utils/mime";
 
-async function getManifest(html: any) {
+async function getManifestFromBody(html: any) {
     // Instantiate cheerio
     let $: any = cheerio.load(html);
     // Define our selector
@@ -45,6 +46,52 @@ async function getManifest(html: any) {
     }
 }
 
+async function getIconsFromBody(html: any, request: any) {
+  // Instantiate cheerio
+  let $: any = cheerio.load(html);
+  // Define our selectors
+  let selectors: any = [
+		"link[rel='icon' i][href]",
+		"link[rel='shortcut icon' i][href]",
+		"link[rel='apple-touch-icon' i][href]",
+		"link[rel='apple-touch-icon-precomposed' i][href]",
+		"link[rel='apple-touch-startup-image' i][href]",
+		"link[rel='mask-icon' i][href]",
+		"link[rel='fluid-icon' i][href]",
+		"meta[name='msapplication-TileImage' i][content]",
+		"meta[name='twitter:image' i][content]",
+		"meta[property='og:image' i][content]",
+	];
+  // Now, we tell cheerio to go find it
+  let icons: any = []
+  $(selectors.join()).each(function(i: any, el: any) {
+    let {
+      href = "",
+      sizes = "",
+      type = "",
+      content = "",
+      rel = "",
+      src = "",
+    } = el.attribs;
+
+    // Set the correct src attribute
+    src = content;
+    if (el.name == "link") src = href;
+    if (src && src !== "#") {
+      // If we haven't figured out a type, we'll do some real ugly work
+      let u: any = new URL(new URL(src, request.url).href).pathname;
+      type = getMimeType(u);
+
+      icons.push({
+        src: new URL(src, request.url).href,
+        sizes,
+        type,
+      });
+    }
+  });
+  return icons
+}
+
 function PlaceHolder (width = 100, height = 100, color = '#666', background = '#ccc', text) {
     const displayText = text || `${width}x${height}`;
     const svgContent = `
@@ -58,4 +105,4 @@ function PlaceHolder (width = 100, height = 100, color = '#666', background = '#
   return svgContent
 };
 
-export { getManifest, PlaceHolder }
+export { getManifestFromBody, getIconsFromBody, PlaceHolder }
