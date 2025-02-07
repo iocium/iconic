@@ -18,7 +18,6 @@ app.get("/icon/:hostname/:filename?", async (c) => {
 	let { cache, metadata }: any = await c.env.KV.getWithMetadata(cacheKey)
 	if (cache) {
 		// We found something cached
-		console.log(`Returning cached asset for ${hostname} (${mime})`)
 		return c.body(cache, {
 			headers: {
 				'Content-Type': metadata['Content-Type']
@@ -65,13 +64,13 @@ app.get("/icon/:hostname/:filename?", async (c) => {
 
 	// Did we find any icons? If not, we'll add a default check for /favicon.ico
 	if (icons.length == 0) {
-		icons.push(
+		icons = [
 			{
 				src: new URL("/favicon.ico", reqInfo.url).href,
 				sizes: "",
 				type: "image/x-icon",
-			},
-		)
+			}
+		]
 	};
 
 	// Now, we'll check for a filename, and fetch an appropriate icon if one exists
@@ -123,9 +122,9 @@ app.get("/icon/:hostname/:filename?", async (c) => {
 	// And return it
 	return c.body(resp.body, {
 		headers: {
-			'Content-Type': getMimeType(image)
+			'Content-Type': resp.headers.get('Content-Type')
 		}
-	});
+	})
 });
 
 export default app;
