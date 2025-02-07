@@ -92,7 +92,7 @@ async function getIconsFromBody(html: any, request: any) {
   return icons
 }
 
-function PlaceHolder (width = 100, height = 100, color = '#666', background = '#ccc', text) {
+function generatePlaceholder (width = 100, height = 100, color = '#666', background = '#ccc', text) {
     const displayText = text || `${width}x${height}`;
     const svgContent = `
     <svg width="${width}" height="${height}" xmlns="http://www.w3.org/2000/svg">
@@ -105,4 +105,4 @@ function PlaceHolder (width = 100, height = 100, color = '#666', background = '#
   return svgContent
 };
 
-export { getManifestFromBody, getIconsFromBody, PlaceHolder }
+export { getManifestFromBody, getIconsFromBody, generatePlaceholder }

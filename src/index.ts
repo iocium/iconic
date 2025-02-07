@@ -1,8 +1,7 @@
 import { Hono } from "hono";
-import * as cheerio from "cheerio";
 import { getMimeType } from "hono/utils/mime";
 import isFQDN from 'validator/lib/isFQDN';
-import { getManifestFromBody, getIconsFromBody, PlaceHolder } from './utils';
+import { getManifestFromBody, getIconsFromBody, generatePlaceholder } from './utils';
 const app = new Hono<{ Bindings: CloudflareBindings }>();
 
 app.get("/icon/:hostname/:filename?", async (c) => {
@@ -100,7 +99,7 @@ app.get("/icon/:hostname/:filename?", async (c) => {
 
 	if (i.status !== 200) {
 		// We're going to fallback to a placeholder image, so generate it
-		let fallback: any = PlaceHolder(100, 100, '#31343C', '#EEE', hostname.slice(0,2).toUpperCase())
+		let fallback: any = generatePlaceholder(100, 100, '#31343C', '#EEE', hostname.slice(0,2).toUpperCase())
 		// Cache it appropriately
 		await c.env.KV.put(cacheKey, fallback, {
 			metadata: { 'Content-Type': 'image/svg+xml'},
