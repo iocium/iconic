@@ -50,20 +50,6 @@ app.get("/icon/:hostname/:filename?", async (c) => {
 	// Once we have the markup, we'll send it to cheerio
 	let icons: any = [];
 
-	let selectors: any = [
-		"link[rel='icon' i][href]",
-		"link[rel='shortcut icon' i][href]",
-		"link[rel='apple-touch-icon' i][href]",
-		"link[rel='apple-touch-icon-precomposed' i][href]",
-		"link[rel='apple-touch-startup-image' i][href]",
-		"link[rel='mask-icon' i][href]",
-		"link[rel='fluid-icon' i][href]",
-		"meta[name='msapplication-TileImage' i][content]",
-		"meta[name='twitter:image' i][content]",
-		"meta[property='og:image' i][content]",
-	];
-	let $: any = cheerio.load(body);
-
 	// First, we attempt to find a manifest
 	try {
 		icons = await getManifestFromBody(body)
