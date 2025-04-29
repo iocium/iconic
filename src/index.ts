@@ -10,6 +10,7 @@ app.get("/icon/:hostname/:filename?", async (c) => {
 	let filename = c.req.param("filename") || 'favicon.ico';
 	let mime: any = getMimeType(filename);
 	let cacheKey: any = btoa(`${hostname}-${filename}-v1`)
+	let ttl: any = c.env.TTL || 604800;
 
 	// Next, we validate it
 	if (!isFQDN(hostname)) return c.text(`Not Found`, 404);
@@ -21,6 +22,29 @@ app.get("/icon/:hostname/:filename?", async (c) => {
 		return c.body(cache, {
 			headers: {
 				'Content-Type': metadata['Content-Type']
+			}
+		})
+	}
+
+	// First, we're going to check some icon servers, see what they have:
+	let nextdns: any = await fetch(`https://favicons.nextdns.io/${hostname}@2x.png`, {
+		cf: {
+			cacheTtlByStatus: {
+				"200-299": 86400,
+				404: 1,
+				"500-599": 0
+			}
+		}
+	});
+	if (nextdns.status == 200) {
+		let r: any = nextdns.clone()
+		await c.env.KV.put(cacheKey, r.body, {
+			metadata: { 'Content-Type': r.headers.get('Content-Type')},
+			expirationTtl: ttl
+		});
+		return c.body(nextdns.body, {
+			headers: {
+				'Content-Type': nextdns.headers.get('Content-Type')
 			}
 		})
 	}
@@ -102,7 +126,7 @@ app.get("/icon/:hostname/:filename?", async (c) => {
 		// Cache it appropriately
 		await c.env.KV.put(cacheKey, fallback, {
 			metadata: { 'Content-Type': 'image/svg+xml'},
-			expirationTtl: 86400
+			expirationTtl: ttl
 		});
 		// And return to viewer
 		return c.body(fallback, {
@@ -116,7 +140,7 @@ app.get("/icon/:hostname/:filename?", async (c) => {
 	let resp: any = i.clone();
 	await c.env.KV.put(cacheKey, i.body, {
 		metadata: { 'Content-Type': i.headers.get('Content-Type')},
-		expirationTtl: 86400
+		expirationTtl: ttl
 	});
 
 	// And return it
