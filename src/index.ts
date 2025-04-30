@@ -27,24 +27,37 @@ app.get("/icon/:hostname/:filename?", async (c) => {
 	}
 
 	// First, we're going to check some icon servers, see what they have:
-	let nextdns: any = await fetch(`https://favicons.nextdns.io/${hostname}@2x.png`, {
-		cf: {
-			cacheTtlByStatus: {
-				"200-299": 86400,
-				404: 1,
-				"500-599": 0
+	let iconServers = [
+		`https://www.google.com/s2/favicons?domain=${hostname}&sz=32`,
+		`https://icons.duckduckgo.com/ip3/${hostname}.ico`,
+		`https://icons.bitwarden.net/${hostname}/icon.png`,
+		`https://favicons.nextdns.io/${hostname}@2x.png`,
+	]
+	let promises: any = []
+	for (let i of iconServers) {
+		promises.push(fetch(i, {
+			headers: {
+				"User-Agent": "iconium/crawler 1.0",
+			},
+			cf: {
+				cacheTtlByStatus: {
+					"200-299": 86400,
+					404: 1,
+					"500-599": 0
+				}
 			}
-		}
-	});
-	if (nextdns.status == 200) {
-		let r: any = nextdns.clone()
+		}));
+	}
+	let res: any = await Promise.any(promises);
+	if (res.status == 200) {
+		let r: any = res.clone()
 		await c.env.KV.put(cacheKey, r.body, {
 			metadata: { 'Content-Type': r.headers.get('Content-Type')},
 			expirationTtl: ttl
 		});
-		return c.body(nextdns.body, {
+		return c.body(res.body, {
 			headers: {
-				'Content-Type': nextdns.headers.get('Content-Type')
+				'Content-Type': res.headers.get('Content-Type')
 			}
 		})
 	}
