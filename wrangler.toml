@@ -1,4 +1,4 @@
-name = "iconic-prod"
+name = "iconic-dev"
 main = "src/index.ts"
 compatibility_date = "2025-01-28"
 account_id = "b0e6b19da3df3101d8e5f1f95fa3dcb7"
@@ -6,11 +6,14 @@ account_id = "b0e6b19da3df3101d8e5f1f95fa3dcb7"
 # Routing
 route = { pattern = "dev.icons.iocium.net", custom_domain = true }
 
+# KV
+kv_namespaces = [{ binding = "KV",  id = "4c942682c66b4de3acd6cc5445ffd107" }]
+
 # Observability
 [observability]
 enabled = true
 
-# KV
-[[kv_namespaces]]
-binding = "KV"
-id = "41f373414f9c42ac85bb8b3caa07aab9"
+[ env.prod ]
+name = "iconic"
+route = { pattern = "icons.iocium.net", custom_domain = true }
+kv_namespaces = [{ binding = "KV",  id = "41f373414f9c42ac85bb8b3caa07aab9" }]
