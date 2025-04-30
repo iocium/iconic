@@ -32,6 +32,7 @@ app.get("/icon/:hostname/:filename?", async (c) => {
 		`https://icons.duckduckgo.com/ip3/${hostname}.ico`,
 		`https://icons.bitwarden.net/${hostname}/icon.png`,
 		`https://favicons.nextdns.io/${hostname}@2x.png`,
+		`https://favicon.yandex.net/favicon/${hostname}`
 	]
 	let promises: any = []
 	for (let i of iconServers) {
