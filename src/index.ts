@@ -63,7 +63,8 @@ app.get("/icon/:hostname/:filename?", async (c) => {
 		})
 	}
 
-	// Once it's valid, we then fetch it
+	// If the icon servers don't have anything though, we're going to do it ourselves
+	let icons: any = [];
 	let d: any = await fetch(`http://${hostname}`, {
 		redirect: "follow",
 		cf: {
@@ -82,9 +83,6 @@ app.get("/icon/:hostname/:filename?", async (c) => {
 		url: d.url,
 	};
 	let body: any = await d.text();
-
-	// Once we have the markup, we'll send it to cheerio
-	let icons: any = [];
 
 	// First, we attempt to find a manifest
 	try {
