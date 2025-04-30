@@ -3,6 +3,7 @@ import { getMimeType } from "hono/utils/mime";
 import isFQDN from 'validator/lib/isFQDN';
 import { getManifestFromBody, getIconsFromBody, generatePlaceholder } from './utils';
 import { FaviconFetch, Service } from './faviconFetch';
+import { FaviconExtractor } from "./faviconExtractor";
 const app = new Hono<{ Bindings: CloudflareBindings }>();
 
 app.get("/icon/:hostname/:filename?", async (c) => {
@@ -12,6 +13,7 @@ app.get("/icon/:hostname/:filename?", async (c) => {
 	let mime: any = getMimeType(filename);
 	let cacheKey: any = btoa(`${hostname}-${filename}-v1`)
 	let ttl: any = c.env.TTL || 604800;
+	let fallback: any = generatePlaceholder(100, 100, '#31343C', '#EEE', hostname.slice(0,2).toUpperCase())
 
 	// Next, we validate it
 	if (!isFQDN(hostname)) return c.text(`Not Found`, 404);
@@ -42,6 +44,8 @@ app.get("/icon/:hostname/:filename?", async (c) => {
 		promises.push(iconFetcher.fetchFavicon(service));
 	}
 	let { status, content, contentType }: any = await Promise.any(promises);
+
+	// If the icon servers have one, we'll use that
 	if (status == 200) {
 		await c.env.KV.put(cacheKey, content, {
 			metadata: { 'Content-Type': contentType},
@@ -55,59 +59,35 @@ app.get("/icon/:hostname/:filename?", async (c) => {
 	}
 
 	// If the icon servers don't have anything though, we're going to do it ourselves
+	let extractor: any = new FaviconExtractor();
+	let iconExtract: any = await extractor.fetchAndExtract(`http://${hostname}`)
 	let icons: any = [];
-	let d: any = await fetch(`http://${hostname}`, {
-		redirect: "follow",
-		cf: {
-			cacheTtlByStatus: {
-				"200-299": 86400,
-				404: 1,
-				"500-599": 0
-			}
-		}
-	});
-	let url: any = new URL(d.url);
-	let reqInfo: any = {
-		status: d.status,
-		protocol: url.protocol.replaceAll(":", ""),
-		hostname: url.hostname,
-		url: d.url,
-	};
-	let body: any = await d.text();
-
-	// First, we attempt to find a manifest
-	try {
-		icons = await getManifestFromBody(body)
-	}
-	catch(e: any) {}
-
-	// Otherwise, time to grab the DOM
-	if (icons.length == 0) {
-		try {
-			icons = await getIconsFromBody(body, reqInfo)
-		}
-		catch(e: any) {}
+	if (iconExtract.length > 0) {
+		icons = extractor.addMimeTypes(iconExtract);
 	}
 
-	// Did we find any icons? If not, we'll add a default check for /favicon.ico
+	// Did we find any icons? If not, we'll fallback
 	if (icons.length == 0) {
-		icons = [
-			{
-				src: new URL("/favicon.ico", reqInfo.url).href,
-				sizes: "",
-				type: "image/x-icon",
+		// We didn't
+		await c.env.KV.put(cacheKey, fallback, {
+			metadata: { 'Content-Type': 'image/svg+xml'},
+			expirationTtl: ttl
+		});
+		return c.body(fallback, {
+			headers: {
+				'Content-Type': 'image/svg+xml'
 			}
-		]
+		})
 	};
 
 	// Now, we'll check for a filename, and fetch an appropriate icon if one exists
 	let image: any = "";
 	for (let i of icons) {
-		if (i.type == mime) image = i.src
+		if (i.type == mime) image = i.url
 	}
 
 	// But, we guard and deliver the default one if no preference was specified or found
-	if (image == "") image = icons[0].src;
+	if (image == "") image = icons[0].url;
 
 	// Now, we go get it
 	let i: any = await fetch(image, {
@@ -124,8 +104,6 @@ app.get("/icon/:hostname/:filename?", async (c) => {
 	});
 
 	if (i.status !== 200) {
-		// We're going to fallback to a placeholder image, so generate it
-		let fallback: any = generatePlaceholder(100, 100, '#31343C', '#EEE', hostname.slice(0,2).toUpperCase())
 		// Cache it appropriately
 		await c.env.KV.put(cacheKey, fallback, {
 			metadata: { 'Content-Type': 'image/svg+xml'},
