@@ -2,6 +2,7 @@ import { Hono } from "hono";
 import { getMimeType } from "hono/utils/mime";
 import isFQDN from 'validator/lib/isFQDN';
 import { getManifestFromBody, getIconsFromBody, generatePlaceholder } from './utils';
+import { FaviconFetch, Service } from './faviconFetch';
 const app = new Hono<{ Bindings: CloudflareBindings }>();
 
 app.get("/icon/:hostname/:filename?", async (c) => {
@@ -27,38 +28,28 @@ app.get("/icon/:hostname/:filename?", async (c) => {
 	}
 
 	// First, we're going to check some icon servers, see what they have:
-	let iconServers = [
-		`https://www.google.com/s2/favicons?domain=${hostname}&sz=32`,
-		`https://icons.duckduckgo.com/ip3/${hostname}.ico`,
-		`https://icons.bitwarden.net/${hostname}/icon.png`,
-		`https://favicons.nextdns.io/${hostname}@2x.png`,
-		`https://favicon.yandex.net/favicon/${hostname}`
+	let enabledServices = [
+		'google',
+		'duckduckgo',
+		'bitwarden',
+		'nextdns',
+		'yandex'
 	]
+	let iconFetcher = new FaviconFetch(hostname)
 	let promises: any = []
-	for (let i of iconServers) {
-		promises.push(fetch(i, {
-			headers: {
-				"User-Agent": "iconium/crawler 1.0",
-			},
-			cf: {
-				cacheTtlByStatus: {
-					"200-299": 86400,
-					404: 1,
-					"500-599": 0
-				}
-			}
-		}));
+	for (let i of enabledServices) {
+		let service = i as Service;
+		promises.push(iconFetcher.fetchFavicon(service));
 	}
-	let res: any = await Promise.any(promises);
-	if (res.status == 200) {
-		let r: any = res.clone()
-		await c.env.KV.put(cacheKey, r.body, {
-			metadata: { 'Content-Type': r.headers.get('Content-Type')},
+	let { status, content, contentType }: any = await Promise.any(promises);
+	if (status == 200) {
+		await c.env.KV.put(cacheKey, content, {
+			metadata: { 'Content-Type': contentType},
 			expirationTtl: ttl
 		});
-		return c.body(res.body, {
+		return c.body(content, {
 			headers: {
-				'Content-Type': res.headers.get('Content-Type')
+				'Content-Type': contentType
 			}
 		})
 	}
