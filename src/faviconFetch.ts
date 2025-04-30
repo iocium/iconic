@@ -28,7 +28,18 @@ export class FaviconFetch {
     const urlFn = FaviconFetch.serviceUrls[service];
     const url = urlFn(this.hostname);
 
-    const response = await fetch(url);
+    const response = await fetch(url, {
+      headers: {
+        "User-Agent": "iconium/crawler 1.0",
+      },
+      cf: {
+        cacheTtlByStatus: {
+          "200-299": 86400,
+          404: 1,
+          "500-599": 0
+        }
+      }
+    });
     if (!response.ok) {
       throw new Error(`Failed to fetch favicon from ${service}: ${response.statusText}`);
     }
