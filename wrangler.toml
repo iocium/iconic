@@ -9,6 +9,10 @@ route = { pattern = "dev.icons.iocium.net", custom_domain = true }
 # KV
 kv_namespaces = [{ binding = "KV",  id = "4c942682c66b4de3acd6cc5445ffd107" }]
 
+# Variables
+[vars]
+TTL = 300
+
 # Observability
 [observability]
 enabled = true
@@ -17,3 +21,6 @@ enabled = true
 name = "iconic"
 route = { pattern = "icons.iocium.net", custom_domain = true }
 kv_namespaces = [{ binding = "KV",  id = "41f373414f9c42ac85bb8b3caa07aab9" }]
+
+    [env.prod.vars]
+    TTL = 604800
