@@ -41,11 +41,40 @@
       margin-top: 1rem;
     }
 
+    input[type="text"] {
+      padding: 0.5rem;
+      margin: 0.5rem 0;
+      width: 100%;
+      border: 1px solid #ccc;
+      border-radius: 6px;
+    }
+
     footer {
       margin-top: 3rem;
       font-size: 0.9rem;
       color: #777;
       text-align: left;
+    }
+
+    /* Loading spinner styles */
+    .loading-spinner {
+      border: 4px solid #f3f3f3;
+      border-top: 4px solid #3498db;
+      border-radius: 50%;
+      width: 32px;
+      height: 32px;
+      animation: spin 1s linear infinite;
+      margin-top: 1rem;
+    }
+
+    @keyframes spin {
+      0% { transform: rotate(0deg); }
+      100% { transform: rotate(360deg); }
+    }
+
+    /* Hide spinner when favicon is loaded */
+    .hidden {
+      display: none;
     }
   </style>
 </head>
@@ -61,8 +90,19 @@
 
     <div class="example">
       <h3>Example:</h3>
-      <pre><code class="language-html">&lt;img src="https://icons.iocium.net/icon/github.com" /&gt;</code></pre>
-      <img src="https://icons.iocium.net/icon/github.com" alt="GitHub Favicon" width="32" height="32" />
+      <p>Enter a hostname below to see a live favicon preview:</p>
+      
+      <input type="text" id="hostname-input" placeholder="Enter hostname (e.g., github.com)" />
+      
+      <h4>Preview:</h4>
+      
+      <!-- Loading Spinner -->
+      <div id="loading-spinner" class="loading-spinner hidden"></div>
+      
+      <!-- Favicon Preview Image -->
+      <img id="favicon-preview" src="" alt="Favicon Preview" width="32" height="32" style="display: none;" />
+      
+      <pre><code class="language-html">&lt;img src="https://icons.iocium.net/icon/[hostname]" /&gt;</code></pre>
     </div>
 
     <footer>
@@ -72,5 +112,37 @@
 
   <script src="//cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/prism.min.js"></script>
   <script src="//cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/components/prism-markup.min.js"></script>
+  <script>
+    const input = document.getElementById('hostname-input');
+    const faviconPreview = document.getElementById('favicon-preview');
+    const loadingSpinner = document.getElementById('loading-spinner');
+    let debounceTimeout;
+
+    input.addEventListener('input', () => {
+      clearTimeout(debounceTimeout);
+
+      debounceTimeout = setTimeout(() => {
+        const hostname = input.value.trim();
+        if (hostname) {
+          const url = `https://icons.iocium.net/icon/${hostname}`;
+
+          // Show loading spinner before the favicon loads
+          loadingSpinner.classList.remove('hidden');
+          faviconPreview.style.display = 'none';
+
+          faviconPreview.onload = () => {
+            loadingSpinner.classList.add('hidden');  // Hide spinner when image is loaded
+            faviconPreview.style.display = 'block';
+          };
+
+          // Set the favicon source
+          faviconPreview.src = url;
+        } else {
+          faviconPreview.style.display = 'none';
+          loadingSpinner.classList.add('hidden');
+        }
+      }, 500); // 500ms delay before showing the preview
+    });
+  </script>
 </body>
 </html>
