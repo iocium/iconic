@@ -43,20 +43,23 @@ app.get("/icon/:hostname/:filename?", async (c) => {
 		let service = i as Service;
 		promises.push(iconFetcher.fetchFavicon(service));
 	}
-	let { status, content, contentType }: any = await Promise.any(promises);
 
 	// If the icon servers have one, we'll use that
-	if (status == 200) {
-		await c.env.KV.put(cacheKey, content, {
-			metadata: { 'Content-Type': contentType},
-			expirationTtl: ttl
-		});
-		return c.body(content, {
-			headers: {
-				'Content-Type': contentType
-			}
-		})
+	try {
+		let { status, content, contentType }: any = await Promise.any(promises);
+		if (status == 200) {
+			await c.env.KV.put(cacheKey, content, {
+				metadata: { 'Content-Type': contentType},
+				expirationTtl: ttl
+			});
+			return c.body(content, {
+				headers: {
+					'Content-Type': contentType
+				}
+			})
+		}
 	}
+	catch(e: any) {}
 
 	// If the icon servers don't have anything though, we're going to do it ourselves
 	let extractor: any = new FaviconExtractor();
