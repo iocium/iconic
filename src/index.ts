@@ -1,7 +1,7 @@
 import { Hono } from "hono";
 import { getMimeType } from "hono/utils/mime";
 import isFQDN from 'validator/lib/isFQDN';
-import { getManifestFromBody, getIconsFromBody, generatePlaceholder } from './utils';
+import { generatePlaceholder } from './placeholderGenerator';
 import { FaviconFetch, Service } from './faviconFetch';
 import { FaviconExtractor } from "./faviconExtractor";
 const app = new Hono<{ Bindings: CloudflareBindings }>();
