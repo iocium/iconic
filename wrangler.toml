@@ -13,6 +13,11 @@ kv_namespaces = [{ binding = "KV",  id = "4c942682c66b4de3acd6cc5445ffd107" }]
 [vars]
 TTL = 300
 
+# Static Assets
+[assets]
+directory = "./static"
+binding = "ASSETS"
+
 # Observability
 [observability]
 enabled = true
