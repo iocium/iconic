@@ -2,7 +2,7 @@ import { Hono } from "hono";
 import { getMimeType } from "hono/utils/mime";
 import isFQDN from 'validator/lib/isFQDN';
 import { generatePlaceholder } from './placeholderGenerator';
-import { FaviconFetch, Service } from './faviconFetch';
+import { FaviconFetcher, Service } from '@iocium/favicon-fetcher';
 import { FaviconExtractor } from "./faviconExtractor";
 const app = new Hono<{ Bindings: CloudflareBindings }>();
 
@@ -37,7 +37,11 @@ app.get("/icon/:hostname/:filename?", async (c) => {
 		'nextdns',
 		'yandex'
 	]
-	let iconFetcher = new FaviconFetch(hostname)
+	let iconFetcher = new FaviconFetcher(hostname, {
+		headers: {
+			'User-Agent': 'iocium/iconic 1.0'
+  		}
+	})
 	let promises: any = []
 	for (let i of enabledServices) {
 		let service = i as Service;
