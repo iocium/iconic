@@ -3,7 +3,7 @@ import { getMimeType } from "hono/utils/mime";
 import isFQDN from 'validator/lib/isFQDN';
 import { generatePlaceholder } from './placeholderGenerator';
 import { FaviconFetcher, Service } from '@iocium/favicon-fetcher';
-import { FaviconExtractor } from "./faviconExtractor";
+import { FaviconExtractor } from "@iocium/favicon-extractor";
 const app = new Hono<{ Bindings: CloudflareBindings }>();
 
 app.get("/icon/:hostname/:filename?", async (c) => {
@@ -49,6 +49,7 @@ app.get("/icon/:hostname/:filename?", async (c) => {
 	}
 
 	// If the icon servers have one, we'll use that
+	/**
 	try {
 		let { status, content, contentType }: any = await Promise.any(promises);
 		if (status == 200) {
@@ -64,13 +65,27 @@ app.get("/icon/:hostname/:filename?", async (c) => {
 		}
 	}
 	catch(e: any) {}
+	 */
 
 	// If the icon servers don't have anything though, we're going to do it ourselves
-	let extractor: any = new FaviconExtractor();
-	let iconExtract: any = await extractor.fetchAndExtract(`http://${hostname}`)
 	let icons: any = [];
-	if (iconExtract.length > 0) {
-		icons = extractor.addMimeTypes(iconExtract);
+	try {
+		let extractor: any = new FaviconExtractor();
+		let iconExtract: any = await extractor.fetchAndExtract(`http://${hostname}`)
+		if (iconExtract.length > 0) {
+			icons = extractor.addMimeTypes(iconExtract);
+		}
+	}
+	catch(e: any) {
+		await c.env.KV.put(cacheKey, fallback, {
+			metadata: { 'Content-Type': 'image/svg+xml'},
+			expirationTtl: ttl
+		});
+		return c.body(fallback, {
+			headers: {
+				'Content-Type': 'image/svg+xml'
+			}
+		})
 	}
 
 	// Did we find any icons? If not, we'll fallback
