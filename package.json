@@ -8,6 +8,7 @@
     "cf-typegen": "wrangler types --env-interface CloudflareBindings"
   },
   "dependencies": {
+    "@iocium/favicon-extractor": "^1.1.0",
     "@iocium/favicon-fetcher": "^1.0.0",
     "hono": "^4.7.8",
     "validator": "^13.15.0"
