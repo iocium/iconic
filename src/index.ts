@@ -49,7 +49,6 @@ app.get("/icon/:hostname/:filename?", async (c) => {
 	}
 
 	// If the icon servers have one, we'll use that
-	/**
 	try {
 		let { status, content, contentType }: any = await Promise.any(promises);
 		if (status == 200) {
@@ -65,7 +64,6 @@ app.get("/icon/:hostname/:filename?", async (c) => {
 		}
 	}
 	catch(e: any) {}
-	 */
 
 	// If the icon servers don't have anything though, we're going to do it ourselves
 	let icons: any = [];
